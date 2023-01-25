@@ -1,0 +1,6 @@
+colorama
+pycodestyle
+pre-commit
+cutie
+tabulate
+requests
