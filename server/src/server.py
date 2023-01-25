@@ -5,7 +5,7 @@ from datetime import datetime
 
 import psycopg
 from dotenv import load_dotenv
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 
 
 app = Flask(__name__)
@@ -26,9 +26,11 @@ def list_jobs():
             jobs = cur.fetchall()
 
             # Just get the names and descriptions
-            # TODO: Fix--I don't think this actually works
-            jobs = [([x[0], x[1]]) for x in jobs]
-            return Response(jobs, status=200)
+            jobs = [(x[1], x[2]) for x in jobs]
+            
+            response = jsonify({ 'status': 'success', 'jobs': jobs })
+
+            return response, 200
 
 
 @app.route('/jobs/submit', methods=['POST'])
@@ -76,3 +78,7 @@ def submit_job():
             conn.commit()
 
             return Response(job_id, status=200)
+
+
+if __name__ == '__main__':
+    app.run()

@@ -15,3 +15,15 @@ To set up the server:
 DB_NAME=<dbname>
 DB_USER=<username>
 ```
+
+Set up the database:
+
+```
+psql -d "dbname='freeml' user=<username> password=<password> host='localhost'" -f setup-dev.sql
+```
+
+You may need to log in to `psql` and create a database called `freeml` first.
+
+### Setting up the CLI client
+
+For a prod deployment, set the `FREEML_MODE` environment variable to `prod`.
