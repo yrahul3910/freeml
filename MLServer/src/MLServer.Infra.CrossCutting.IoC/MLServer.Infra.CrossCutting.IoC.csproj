@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MLServer.Application\MLServer.Application.csproj" />
+    <ProjectReference Include="..\MLServer.Domain.Core\MLServer.Domain.Core.csproj" />
+    <ProjectReference Include="..\MLServer.Domain\MLServer.Domain.csproj" />
+    <ProjectReference Include="..\MLServer.Infra.CrossCutting.Bus\MLServer.Infra.CrossCutting.Bus.csproj" />
+    <ProjectReference Include="..\MLServer.Infra.CrossCutting.Identity\MLServer.Infra.CrossCutting.Identity.csproj" />
+    <ProjectReference Include="..\MLServer.Infra.Data\MLServer.Infra.Data.csproj" />
+  </ItemGroup>
+
+</Project>
