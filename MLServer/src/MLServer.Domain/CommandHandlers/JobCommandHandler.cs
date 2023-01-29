@@ -59,7 +59,7 @@ namespace MLServer.Domain.CommandHandlers
             path = await this.CreateJobDirectory(message.Id.ToString(), "data");
             using (var stream = new FileStream(path, FileMode.Create))
             {
-                await message.Data.CopyToAsync(stream);
+                await message.Dataset.CopyToAsync(stream);
             }
 
             var Job = new Job(Guid.NewGuid(), message.Name, message.Description, message.Status);

@@ -65,7 +65,7 @@ namespace MLServer.Services.Api.Controllers.v1
         [HttpPost]
         [ProducesResponseType(typeof(JobViewModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
-        public async Task<IActionResult> Post([FromBody] RegisterNewJobViewModel job)
+        public async Task<IActionResult> Post([FromForm] RegisterNewJobViewModel job)
         {
             var response = await _jobAppService.Register(job);
 

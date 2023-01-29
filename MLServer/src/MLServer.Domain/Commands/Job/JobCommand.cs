@@ -13,6 +13,6 @@ namespace MLServer.Domain.Commands.Job
         public string Description { get; protected set; }
         public JobStatus Status { get; protected set; }
         public IFormFile Model { get; protected set; }
-        public IFormFile Data { get; protected set; }
+        public IFormFile Dataset { get; protected set; }
     }
 }
