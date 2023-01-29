@@ -50,13 +50,15 @@ namespace MLServer.Domain.CommandHandlers
             }
 
             // Copy the model over.
-            var path = await this.CreateJobDirectory(message.Id.ToString(), "model");
+            var modelFilename = "model." + message.Model.FileName.Split(".")[1];
+            var path = await this.CreateJobDirectory(message.Id.ToString(), modelFilename);
             using (var stream = new FileStream(path, FileMode.Create))
             {
                 await message.Model.CopyToAsync(stream);
             }
 
-            path = await this.CreateJobDirectory(message.Id.ToString(), "data");
+            var dataFilename = "data." + message.Dataset.FileName.Split(".")[1]; 
+            path = await this.CreateJobDirectory(message.Id.ToString(), dataFilename);
             using (var stream = new FileStream(path, FileMode.Create))
             {
                 await message.Dataset.CopyToAsync(stream);
