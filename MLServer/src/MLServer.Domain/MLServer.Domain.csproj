@@ -8,4 +8,10 @@
     <ProjectReference Include="..\MLServer.Domain.Core\MLServer.Domain.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Microsoft.AspNetCore.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+  </ItemGroup>
 </Project>

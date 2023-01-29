@@ -1,9 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using MLServer.Domain.Commands.Job;
 using MLServer.Domain.Core.Bus;
+using MLServer.Domain.Core.Events;
 using MLServer.Domain.Core.Notifications;
 using MLServer.Domain.Interfaces;
 using MLServer.Domain.Models;
@@ -29,12 +31,35 @@ namespace MLServer.Domain.CommandHandlers
             _bus = bus;
         }
 
+        private async Task<string> CreateJobDirectory(string id, string name)
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "jobs", id, name);
+            var directory = Path.GetDirectoryName(path);
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            return await Task.FromResult(path);
+        }
+
         public async Task<object> Handle(RegisterNewJobCommand message, CancellationToken cancellationToken)
         {
             if (!message.IsValid())
             {
                 NotifyValidationErrors(message);
                 return await Task.FromResult(false);
+            }
+
+            // Copy the model over.
+            var path = await this.CreateJobDirectory(message.Id.ToString(), "model");
+            using (var stream = new FileStream(path, FileMode.Create))
+            {
+                await message.Model.CopyToAsync(stream);
+            }
+
+            path = await this.CreateJobDirectory(message.Id.ToString(), "data");
+            using (var stream = new FileStream(path, FileMode.Create))
+            {
+                await message.Data.CopyToAsync(stream);
             }
 
             var Job = new Job(Guid.NewGuid(), message.Name, message.Description, message.Status);
