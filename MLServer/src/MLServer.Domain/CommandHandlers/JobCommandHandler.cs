@@ -49,22 +49,26 @@ namespace MLServer.Domain.CommandHandlers
                 return await Task.FromResult(false);
             }
 
+            // Create a job Guid
+            var id = Guid.NewGuid();
+
             // Copy the model over.
-            var modelFilename = "model." + message.Model.FileName.Split(".")[1];
-            var path = await this.CreateJobDirectory(message.Id.ToString(), modelFilename);
+            var fileType = message.Model.FileName.Split(".")[message.Model.FileName.Split(".").Length - 1];
+            var modelFilename = "model." + fileType;
+            var path = await this.CreateJobDirectory(id.ToString(), modelFilename);
             using (var stream = new FileStream(path, FileMode.Create))
             {
                 await message.Model.CopyToAsync(stream);
             }
 
             var dataFilename = "data." + message.Dataset.FileName.Split(".")[1]; 
-            path = await this.CreateJobDirectory(message.Id.ToString(), dataFilename);
+            path = await this.CreateJobDirectory(id.ToString(), dataFilename);
             using (var stream = new FileStream(path, FileMode.Create))
             {
                 await message.Dataset.CopyToAsync(stream);
             }
 
-            var Job = new Job(Guid.NewGuid(), message.Name, message.Description, message.Status);
+            var Job = new Job(id, message.Name, message.Description, message.Status);
 
             _JobRepository.Add(Job);
 

@@ -20,7 +20,7 @@ else:
     verify_cert = True
 
 
-def login(email: str, password: str):
+def _login(email: str, password: str):
     """
     Authenticates the user.
     """
@@ -37,7 +37,7 @@ def login(email: str, password: str):
     return response.json()['access_token']
 
 
-def status_to_text(status: int):
+def _status_to_text(status: int):
     """
     Converts a status code to a human-readable string.
     """
@@ -59,8 +59,56 @@ def list(token: str):
         fatal_error('Failed to list jobs')
 
     response = response.json()
-    response = [(x['id'], x['name'], x['description'], status_to_text(x['status'])) for x in response]
+    response = [(x['id'], x['name'], x['description'], _status_to_text(x['status'])) for x in response]
     print(tabulate(response, headers=['ID', 'Name', 'Description', 'Status']))
+
+
+def submit(token: str, args: argparse.Namespace):
+    """
+    Submits a job to the server.
+    """
+    if not args.model or not args.data:
+        fatal_error('Need to specify a model and data')
+    
+    if not args.name or not args.description:
+        fatal_error('Need to specify a name and description')
+    
+    if not os.path.exists(args.model):
+        fatal_error('Model does not exist')
+    
+    if not os.path.exists(args.data):
+        fatal_error('Data does not exist')
+    
+    # Check that the size of the model and data are under 47MB.
+    # This is because the server has a 50MB limit, and we need to
+    # account for the overhead of the request.
+    if os.path.getsize(args.model) + os.path.getsize(args.data) > 47 * 1024 * 1024:
+        fatal_error('Model and data are too large')
+    
+    data = {
+        'name': args.name,
+        'description': args.description,
+        'status': 0
+    }
+
+    files = {
+        'model': (args.model, open(args.model, 'rb')),
+        'dataset': (args.data, open(args.data, 'rb'))
+    }
+    
+    # Submit the job
+    response = requests.post(f'{BASE_URL}/api/v1/job',
+        headers={'Authorization': f'Bearer {token}'}, 
+        data=data,
+        files=files,
+        verify=verify_cert)
+
+    print(response.json())
+    
+    if response.status_code != 200:
+        fatal_error('Failed to submit job')
+    
+    info('Successfully submitted job with id ' + str(response.json()['id']))
 
 
 def _main():
@@ -70,6 +118,10 @@ def _main():
     )
     parser.add_argument('--email', help='Email address to use', required=True)
     parser.add_argument('--password', help='Password to use', required=True)
+    parser.add_argument('--model', help='Model to use')
+    parser.add_argument('--data', help='Data to use')
+    parser.add_argument('--name', help='Name of the job')
+    parser.add_argument('--description', help='Description of the job')
     parser.add_argument('command', help='Subcommand to run')
     args = parser.parse_args()
     
@@ -83,10 +135,12 @@ def _main():
     if email is None or password is None:
         fatal_error("Invalid credentials.")
     
-    token = login(email, password)
+    token = _login(email, password)
 
     # Run the command
-    globals()[args.command](token)
+    match args.command:
+        case 'list': list(token)
+        case 'submit': submit(token, args)
 
 
 if __name__ == '__main__':
