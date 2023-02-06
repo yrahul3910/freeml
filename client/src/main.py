@@ -1,5 +1,6 @@
 import argparse
 import os
+import warnings
 
 import requests
 from tabulate import tabulate
@@ -7,24 +8,21 @@ from tabulate import tabulate
 from utils import fatal_error, info
 
 
+warnings.filterwarnings('ignore')
+
+# Set up configurations
 if 'FREEML_MODE' not in os.environ or os.environ['FREEML_MODE'] == 'dev':
     BASE_URL = 'https://localhost:5001'
-else:
-    pass
-    # TODO: Set the prod URL
-
-
-if 'localhost' in BASE_URL:
     verify_cert = False
 else:
     verify_cert = True
+    # TODO: Set the prod URL
 
 
-def _login(email: str, password: str):
+def _login(email: str, password: str) -> str:
     """
     Authenticates the user.
     """
-
     response = requests.post(f'{BASE_URL}/api/v1/account/login', json={
         'email': email,
         'password': password
@@ -37,7 +35,7 @@ def _login(email: str, password: str):
     return response.json()['access_token']
 
 
-def _status_to_text(status: int):
+def _status_to_text(status: int) -> str:
     """
     Converts a status code to a human-readable string.
     """
@@ -47,7 +45,7 @@ def _status_to_text(status: int):
         case 2: return 'Completed'
 
 
-def list(token: str):
+def list(token: str) -> None:
     """
     Lists available jobs, along with their descriptions.
     """
@@ -63,7 +61,7 @@ def list(token: str):
     print(tabulate(response, headers=['ID', 'Name', 'Description', 'Status']))
 
 
-def submit(token: str, args: argparse.Namespace):
+def submit(token: str, args: argparse.Namespace) -> None:
     """
     Submits a job to the server.
     """
@@ -80,7 +78,7 @@ def submit(token: str, args: argparse.Namespace):
         fatal_error('Data does not exist')
     
     # Check that the size of the model and data are under 47MB.
-    # This is because the server has a 50MB limit, and we need to
+    # This is because the server has a 47.7MB limit, and we need to
     # account for the overhead of the request.
     if os.path.getsize(args.model) + os.path.getsize(args.data) > 47 * 1024 * 1024:
         fatal_error('Model and data are too large')
@@ -98,7 +96,10 @@ def submit(token: str, args: argparse.Namespace):
     
     # Submit the job
     response = requests.post(f'{BASE_URL}/api/v1/job',
-        headers={'Authorization': f'Bearer {token}'}, 
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'multipart/form-data'
+        }, 
         data=data,
         files=files,
         verify=verify_cert)
@@ -109,6 +110,66 @@ def submit(token: str, args: argparse.Namespace):
         fatal_error('Failed to submit job')
     
     info('Successfully submitted job with id ' + str(response.json()['id']))
+
+
+def submit_interactive(token: str) -> None:
+    """
+    Submits a job to the server in interactive mode.
+    """
+    model = input('Model path: ')
+    data = input('Data path: ')
+    name = input('Name: ')
+    description = input('Description: ')
+
+    submit(token, argparse.Namespace(
+        model=model,
+        data=data,
+        name=name,
+        description=description
+    ))
+
+
+def run_job(token: str) -> None:
+    """
+    Runs a job.
+    """
+    job_id = input('Job ID: ')
+
+    print('Downloading job artifacts...', end='')
+    response = requests.get(f'{BASE_URL}/api/v1/job/download/{job_id}/model',
+        headers={'Authorization': f'Bearer {token}'},
+        verify=verify_cert)
+    
+    # Write response to a file
+    with open('model', 'wb') as f:
+        f.write(response.content)
+
+    response = requests.get(f'{BASE_URL}/api/v1/job/download/{job_id}/data',
+        headers={'Authorization': f'Bearer {token}'},
+        verify=verify_cert)
+
+    # Write response to a file
+    with open('data', 'wb') as f:
+        f.write(response.content)
+
+    print('done')
+
+    if response.status_code != 200:
+        fatal_error('Failed to download job artifacts')
+
+
+def interactive_shell(token: str) -> None:
+    """
+    Enters an interactive shell.
+    """
+    while True:
+        command = input('freeml> ')
+        match command:
+            case 'help': print('Available commands: exit, list, submit, run')
+            case 'exit': exit(0)
+            case 'list': list(token)
+            case 'submit': submit_interactive(token)
+            case 'run': run_job(token)
 
 
 def _main():
@@ -122,20 +183,20 @@ def _main():
     parser.add_argument('--data', help='Data to use')
     parser.add_argument('--name', help='Name of the job')
     parser.add_argument('--description', help='Description of the job')
-    parser.add_argument('command', help='Subcommand to run')
+    parser.add_argument('command', nargs='?', help='Subcommand to run')
     args = parser.parse_args()
-    
-    if args.command not in globals():
-        fatal_error('Invalid command')
-    
+
     email = args.email
     password = args.password
 
-    # Authenticate
-    if email is None or password is None:
-        fatal_error("Invalid credentials.")
-    
     token = _login(email, password)
+
+    if args.command is None:
+        # Enter interactive mode
+        interactive_shell(token)
+    
+    if args.command not in globals():
+        fatal_error('Invalid command')
 
     # Run the command
     match args.command:

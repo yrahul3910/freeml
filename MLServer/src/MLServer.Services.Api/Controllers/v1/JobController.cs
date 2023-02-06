@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -47,6 +48,20 @@ namespace MLServer.Services.Api.Controllers.v1
             return BadRequest(_notifications.GetNotifications().Select(n => n.Value));
         }
 
+        [HttpGet("download/{id:guid}/{req}")]
+        [ProducesResponseType(typeof(PhysicalFileResult), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BadRequestObjectResult), (int)HttpStatusCode.BadRequest)]
+        public IActionResult DownloadFile(Guid id, string req)
+        {
+            if (req != "model" && req != "data")
+            {
+                return BadRequest("Invalid request.");
+            }
+
+            string filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), req);
+            return PhysicalFile(filePath, MimeTypes.GetMimeType(filePath), Path.GetFileName(filePath));
+        }
+
         [HttpGet("{id:guid}")]
         [ProducesResponseType(typeof(JobViewModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
@@ -67,6 +82,12 @@ namespace MLServer.Services.Api.Controllers.v1
         [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> Post([FromForm] RegisterNewJobViewModel job)
         {
+            // Make sure the job status is correct.
+            if (job.Status != 0)
+            {
+                return BadRequest("Invalid status.");
+            }
+
             var response = await _jobAppService.Register(job);
 
             if (IsValidOperation())

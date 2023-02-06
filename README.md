@@ -22,8 +22,24 @@ Set up the database:
 psql -d "dbname='freeml' user=<username> password=<password> host='localhost'" -f setup-dev.sql
 ```
 
-You may need to log in to `psql` and create a database called `freeml` first.
+In `MLServer.Services.Api`, update `appsettings.json` to reflect the correct database connection string. You may need to log in to `psql` and create a database called `freeml` first.
 
 ### Setting up the CLI client
 
 For a prod deployment, set the `FREEML_MODE` environment variable to `prod`.
+
+## Usage
+
+### CLI
+
+To submit a new job, run
+
+```
+python3.11 main.py --email='user@test.com' --password='password' --model='./model.pkl' --data='.data.pkl' --name='test' --description='description' submit
+```
+
+To list all jobs, run
+
+```
+python3.11 main.py --email='user@test.com' --password='password' list
+```
