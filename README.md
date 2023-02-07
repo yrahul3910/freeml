@@ -26,7 +26,7 @@ In `MLServer.Services.Api`, update `appsettings.json` to reflect the correct dat
 
 ### Setting up the CLI client
 
-For a prod deployment, set the `FREEML_MODE` environment variable to `prod`.
+Python 3.10 is recommended. The code uses Python 3.10's `match` feature. Python 3.11 is currently [unsupported by PyTorch](https://github.com/pytorch/pytorch/issues/86566). For a prod deployment, set the `FREEML_MODE` environment variable to `prod`.
 
 ## Usage
 
@@ -35,11 +35,28 @@ For a prod deployment, set the `FREEML_MODE` environment variable to `prod`.
 To submit a new job, run
 
 ```
-python3.11 main.py --email='user@test.com' --password='password' --model='./model.pkl' --data='.data.pkl' --name='test' --description='description' submit
+python3.10 main.py --email='user@test.com' --password='password' --model='./model.pkl' --data='.data.pkl' --name='test' --description='description' submit
 ```
 
 To list all jobs, run
 
 ```
-python3.11 main.py --email='user@test.com' --password='password' list
+python3.10 main.py --email='user@test.com' --password='password' list
+```
+
+Alternatively, you can run it in interactive mode:
+
+```
+python3.10 main.py --email='user@test.com' --password='password'
+```
+
+## Maintenance
+
+### EF Core Migrations
+
+To run migrations, run
+
+```
+dotnet ef migrations add {MigrationName} --context ApplicationDbContext --startup-project ../MLServer.Services.Api
+dotnet ef database update --context ApplicationDbContext --startup-project ../MLServer.Services.Api
 ```
