@@ -1,11 +1,12 @@
 import argparse
 import os
 import warnings
+import pickle
 
 import requests
 from tabulate import tabulate
 
-from utils import fatal_error, info
+from utils import fatal_error, info, gradient_update
 
 
 warnings.filterwarnings('ignore')
@@ -140,6 +141,8 @@ def run_job(token: str) -> None:
         headers={'Authorization': f'Bearer {token}'},
         verify=verify_cert)
     
+    model = pickle.loads(response.content)
+    
     # Write response to a file
     with open('model', 'wb') as f:
         f.write(response.content)
@@ -147,6 +150,8 @@ def run_job(token: str) -> None:
     response = requests.get(f'{BASE_URL}/api/v1/job/download/{job_id}/data',
         headers={'Authorization': f'Bearer {token}'},
         verify=verify_cert)
+    
+    data = pickle.loads(response.content)
 
     # Write response to a file
     with open('data', 'wb') as f:
@@ -156,6 +161,23 @@ def run_job(token: str) -> None:
 
     if response.status_code != 200:
         fatal_error('Failed to download job artifacts')
+    
+    # Run the job
+    print('Running job...', end='')
+    updates = gradient_update(model, data)
+    print('done')
+
+    # Upload the updates
+    print('Uploading updates...', end='')
+    response = requests.post(f'{BASE_URL}/api/v1/job/upload/{job_id}',
+        headers={'Authorization': f'Bearer {token}'},
+        data={'updates': pickle.dumps(updates)}
+    )
+
+    if response.status_code != 200:
+        fatal_error('Failed to upload updates')
+    else:
+        info('Success.')
 
 
 def interactive_shell(token: str) -> None:
