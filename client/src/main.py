@@ -170,7 +170,10 @@ def run_job(token: str) -> None:
     # Upload the updates
     print('Uploading updates...', end='')
     response = requests.post(f'{BASE_URL}/api/v1/job/upload/{job_id}',
-        headers={'Authorization': f'Bearer {token}'},
+        headers={
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json'
+        },
         data={'updates': pickle.dumps(updates)}
     )
 

@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using MediatR;
+using Newtonsoft.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MLServer.Application.Interfaces;
 using MLServer.Application.ViewModels.v1.Job;
 using MLServer.Domain.Core.Bus;
 using MLServer.Domain.Core.Notifications;
+using MLServer.Services.Api.Helpers;
 
 namespace MLServer.Services.Api.Controllers.v1
 {
@@ -46,6 +49,33 @@ namespace MLServer.Services.Api.Controllers.v1
             }
 
             return BadRequest(_notifications.GetNotifications().Select(n => n.Value));
+        }
+
+        [HttpGet("upload/{id:guid}")]
+        [ProducesResponseType(typeof(JsonMap), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(BadRequestObjectResult), (int)HttpStatusCode.BadRequest)]
+        public IActionResult UploadUpdates(Guid id, [FromBody] Dictionary<string, byte[]> updates)
+        {
+            // TODO: This filename is temporary! Change it later!
+            var filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), "update.bin");
+            System.IO.File.WriteAllBytes(filePath, updates["updates"]);
+
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/usr/local/bin/python3.10",
+                    Arguments = $"PythonScripts/update.py {id.ToString()}",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            process.WaitForExit();
+
+            return Ok(json);
         }
 
         [HttpGet("download/{id:guid}/{req}")]
