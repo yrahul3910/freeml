@@ -2,11 +2,13 @@ import argparse
 import os
 import warnings
 import pickle
+from io import BytesIO
 
 import requests
+import torch
 from tabulate import tabulate
 
-from utils import fatal_error, info, gradient_update
+from src.utils import fatal_error, info, gradient_update
 
 
 warnings.filterwarnings('ignore')
@@ -98,8 +100,7 @@ def submit(token: str, args: argparse.Namespace) -> None:
     # Submit the job
     response = requests.post(f'{BASE_URL}/api/v1/job',
         headers={
-            'Authorization': f'Bearer {token}',
-            'Content-Type': 'multipart/form-data'
+            'Authorization': f'Bearer {token}'
         }, 
         data=data,
         files=files,
@@ -141,7 +142,7 @@ def run_job(token: str) -> None:
         headers={'Authorization': f'Bearer {token}'},
         verify=verify_cert)
     
-    model = pickle.loads(response.content)
+    model = torch.jit.load(BytesIO(response.content))
     
     # Write response to a file
     with open('model', 'wb') as f:

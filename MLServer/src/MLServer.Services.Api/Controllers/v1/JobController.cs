@@ -26,6 +26,8 @@ namespace MLServer.Services.Api.Controllers.v1
         private readonly IJobAppService _jobAppService;
         private readonly DomainNotificationHandler _notifications;
 
+        private const long MaxFileSize = 70000000;
+
         public JobController(
             IJobAppService jobAppService,
             INotificationHandler<DomainNotification> notifications,
@@ -52,7 +54,7 @@ namespace MLServer.Services.Api.Controllers.v1
         }
 
         [HttpGet("upload/{id:guid}")]
-        [ProducesResponseType(typeof(JsonMap), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(OkResult), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(BadRequestObjectResult), (int)HttpStatusCode.BadRequest)]
         public IActionResult UploadUpdates(Guid id, [FromBody] Dictionary<string, byte[]> updates)
         {
@@ -75,7 +77,7 @@ namespace MLServer.Services.Api.Controllers.v1
             process.Start();
             process.WaitForExit();
 
-            return Ok(json);
+            return Ok();
         }
 
         [HttpGet("download/{id:guid}/{req}")]
@@ -108,6 +110,8 @@ namespace MLServer.Services.Api.Controllers.v1
         }
 
         [HttpPost]
+        [RequestSizeLimit(MaxFileSize)]
+        [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSize)]
         [ProducesResponseType(typeof(JobViewModel), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
         public async Task<IActionResult> Post([FromForm] RegisterNewJobViewModel job)

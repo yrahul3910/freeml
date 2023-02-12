@@ -4,3 +4,4 @@ pre-commit
 cutie
 tabulate
 requests
+python-dotenv

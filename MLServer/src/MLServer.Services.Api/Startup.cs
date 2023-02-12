@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using MLServer.Services.Api.Configurations;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace MLServer.Services.Api
 {
