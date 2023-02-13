@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using MLServer.Domain.Core.Commands;
 using MLServer.Domain.Enums;
-using Type = MLServer.Domain.Enums.Type;
 
 namespace MLServer.Domain.Commands.Job
 {

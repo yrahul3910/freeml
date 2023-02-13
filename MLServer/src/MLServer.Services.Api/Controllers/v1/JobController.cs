@@ -13,7 +13,7 @@ using MLServer.Application.Interfaces;
 using MLServer.Application.ViewModels.v1.Job;
 using MLServer.Domain.Core.Bus;
 using MLServer.Domain.Core.Notifications;
-using MLServer.Services.Api.Helpers;
+using Microsoft.AspNetCore.Http;
 
 namespace MLServer.Services.Api.Controllers.v1
 {
@@ -53,21 +53,24 @@ namespace MLServer.Services.Api.Controllers.v1
             return BadRequest(_notifications.GetNotifications().Select(n => n.Value));
         }
 
-        [HttpGet("upload/{id:guid}")]
+        [HttpPost("upload/{id:guid}")]
         [ProducesResponseType(typeof(OkResult), (int)HttpStatusCode.OK)]
-        [ProducesResponseType(typeof(BadRequestObjectResult), (int)HttpStatusCode.BadRequest)]
-        public IActionResult UploadUpdates(Guid id, [FromBody] Dictionary<string, byte[]> updates)
+        [ProducesResponseType(typeof(ObjectResult), (int)HttpStatusCode.InternalServerError)]
+        public async Task<IActionResult> UploadUpdates(Guid id, [FromForm] IFormFile updates)
         {
             // TODO: This filename is temporary! Change it later!
             var filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), "update.bin");
-            System.IO.File.WriteAllBytes(filePath, updates["updates"]);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await updates.CopyToAsync(stream);
+            }
 
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "/usr/local/bin/python3.10",
-                    Arguments = $"PythonScripts/update.py {id.ToString()}",
+                    Arguments = $"PythonScripts/update.py {Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString())}",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
@@ -77,7 +80,14 @@ namespace MLServer.Services.Api.Controllers.v1
             process.Start();
             process.WaitForExit();
 
-            return Ok();
+            if (process.ExitCode == 0)
+            {
+                return Ok();
+            }
+            else
+            {
+                return Problem();
+            }
         }
 
         [HttpGet("download/{id:guid}/{req}")]

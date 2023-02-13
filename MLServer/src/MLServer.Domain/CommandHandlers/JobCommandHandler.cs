@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using MediatR;
 using MLServer.Domain.Commands.Job;
 using MLServer.Domain.Core.Bus;
-using MLServer.Domain.Core.Events;
 using MLServer.Domain.Core.Notifications;
 using MLServer.Domain.Interfaces;
 using MLServer.Domain.Models;

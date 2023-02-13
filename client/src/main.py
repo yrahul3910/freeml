@@ -164,19 +164,28 @@ def run_job(token: str) -> None:
         fatal_error('Failed to download job artifacts')
     
     # Run the job
-    print('Running job...', end='')
+    print('Running job...', end='', flush=True)
     updates = gradient_update(model, data)
     print('done')
+
+    # Temporarily write updates to a file
+    with open('updates', 'wb') as f:
+        pickle.dump(updates, f)
 
     # Upload the updates
     print('Uploading updates...', end='')
     response = requests.post(f'{BASE_URL}/api/v1/job/upload/{job_id}',
         headers={
-            'Authorization': f'Bearer {token}',
-            'Content-Type': 'application/json'
+            'Authorization': f'Bearer {token}'
         },
-        data={'updates': pickle.dumps(updates)}
+        files={'updates': ('updates', open('updates', 'rb'))},
+        verify=verify_cert
     )
+
+    # Delete the temporary files
+    os.remove('model')
+    os.remove('data')
+    os.remove('updates')
 
     if response.status_code != 200:
         fatal_error('Failed to upload updates')
