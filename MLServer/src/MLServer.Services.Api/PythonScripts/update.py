@@ -12,7 +12,6 @@ def update(model_path: str, updates_path: str) -> None:
 
     with torch.no_grad():
         for name, param in model.named_parameters():
-            print(updates, name)
             param -= updates[name]
 
         model.zero_grad()

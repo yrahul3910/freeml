@@ -64,6 +64,6 @@ if __name__ == '__main__':
 
     # Now run the job
     output.seek(0)
-    job_id = output.read().split('with id ')[1]
-    sys.stdin = StringIO(job_id + '\n')
+    job_id = output.read().split('with id ')[1].split('\x1b')[0]
+    sys.stdin = StringIO(job_id)
     run_job(token)

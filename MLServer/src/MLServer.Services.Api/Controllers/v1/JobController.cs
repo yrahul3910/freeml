@@ -60,7 +60,7 @@ namespace MLServer.Services.Api.Controllers.v1
         {
             // TODO: This filename is temporary! Change it later!
             var filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), "update.bin");
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await updates.CopyToAsync(stream);
             }
@@ -78,7 +78,7 @@ namespace MLServer.Services.Api.Controllers.v1
             };
 
             process.Start();
-            process.WaitForExit();
+            await process.WaitForExitAsync();
 
             if (process.ExitCode == 0)
             {
@@ -92,6 +92,7 @@ namespace MLServer.Services.Api.Controllers.v1
 
         [HttpGet("download/{id:guid}/{req}")]
         [ProducesResponseType(typeof(PhysicalFileResult), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(ObjectResult), (int)HttpStatusCode.InternalServerError)]
         [ProducesResponseType(typeof(BadRequestObjectResult), (int)HttpStatusCode.BadRequest)]
         public IActionResult DownloadFile(Guid id, string req)
         {
@@ -100,8 +101,37 @@ namespace MLServer.Services.Api.Controllers.v1
                 return BadRequest("Invalid request.");
             }
 
-            string filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), req);
-            return PhysicalFile(filePath, MimeTypes.GetMimeType(filePath), Path.GetFileName(filePath));
+            if (req == "data")
+            {
+                var filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), "subset");
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "/usr/local/bin/python3.10",
+                        Arguments = $"PythonScripts/data_subset.py {Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString())}",
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    return Problem();
+                }
+
+                // The Python script writes to a file called subset.
+                return PhysicalFile(filePath, MimeTypes.GetMimeType(filePath), Path.GetFileName(filePath));
+            }
+            else
+            {
+                var filePath = Path.Combine(AppContext.BaseDirectory, "jobs", id.ToString(), req);
+                return PhysicalFile(filePath, MimeTypes.GetMimeType(filePath), Path.GetFileName(filePath));
+            }
         }
 
         [HttpGet("{id:guid}")]

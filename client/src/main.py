@@ -3,6 +3,7 @@ import os
 import warnings
 import pickle
 from io import BytesIO
+from typing import Iterable
 
 import requests
 import torch
@@ -46,6 +47,7 @@ def _status_to_text(status: int) -> str:
         case 0: return 'Pending'
         case 1: return 'Running'
         case 2: return 'Completed'
+        case _: return 'Unknown'
 
 
 def list(token: str) -> None:
@@ -59,9 +61,9 @@ def list(token: str) -> None:
     if response.status_code != 200:
         fatal_error('Failed to list jobs')
 
-    response = response.json()
-    response = [(x['id'], x['name'], x['description'], _status_to_text(x['status'])) for x in response]
-    print(tabulate(response, headers=['ID', 'Name', 'Description', 'Status']))
+    response_json: Iterable = response.json()
+    response_values = [(x['id'], x['name'], x['description'], _status_to_text(x['status'])) for x in response_json]
+    print(tabulate(response_values, headers=['ID', 'Name', 'Description', 'Status']))
 
 
 def submit(token: str, args: argparse.Namespace) -> None:
@@ -143,20 +145,12 @@ def run_job(token: str) -> None:
         verify=verify_cert)
     
     model = torch.jit.load(BytesIO(response.content))
-    
-    # Write response to a file
-    with open('model', 'wb') as f:
-        f.write(response.content)
 
     response = requests.get(f'{BASE_URL}/api/v1/job/download/{job_id}/data',
         headers={'Authorization': f'Bearer {token}'},
         verify=verify_cert)
     
     data = pickle.loads(response.content)
-
-    # Write response to a file
-    with open('data', 'wb') as f:
-        f.write(response.content)
 
     print('done')
 
@@ -165,7 +159,7 @@ def run_job(token: str) -> None:
     
     # Run the job
     print('Running job...', end='', flush=True)
-    updates = gradient_update(model, data)
+    updates = gradient_update(model, data, 5)
     print('done')
 
     # Temporarily write updates to a file
@@ -183,8 +177,6 @@ def run_job(token: str) -> None:
     )
 
     # Delete the temporary files
-    os.remove('model')
-    os.remove('data')
     os.remove('updates')
 
     if response.status_code != 200:

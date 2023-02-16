@@ -23,11 +23,10 @@ def fatal_error(message: str, code: int=1):
     exit(code)
 
 
-def gradient_update(model: Module, data: TensorDataset) -> Dict[str, torch.Tensor]:
+def gradient_update(model: Module, data: TensorDataset, n_epochs: int) -> Dict[str, torch.Tensor]:
     """
     Runs a gradient update on the given model and data.
     """
-    N_EPOCHS = 5
     BATCH_SIZE = 128
     LEARNING_RATE = 0.1
     LOSS_FUNC = CrossEntropyLoss()
@@ -35,7 +34,7 @@ def gradient_update(model: Module, data: TensorDataset) -> Dict[str, torch.Tenso
     train_dl = DataLoader(data, batch_size=BATCH_SIZE)
     update = {}
 
-    for _ in range(N_EPOCHS):
+    for _ in range(n_epochs):
         for xb, yb in train_dl:
             pred = model(xb)
             loss = LOSS_FUNC(pred, yb)
