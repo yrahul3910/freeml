@@ -26,6 +26,15 @@ namespace MLServer.Infra.Data.Mappings
                 .HasColumnType("varchar")
                 .HasMaxLength(256)
                 .IsRequired();
+            
+            builder.Property(j => j.Owner)
+                .HasColumnType("varchar")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            builder.Property(j => j.EpochsRun)
+                .HasDefaultValue(0)
+                .IsRequired();
 
             builder.Property(j => j.Status)
                 .IsRequired();

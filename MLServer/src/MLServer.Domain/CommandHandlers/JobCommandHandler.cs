@@ -66,7 +66,7 @@ namespace MLServer.Domain.CommandHandlers
                 await message.Dataset.CopyToAsync(stream);
             }
 
-            var Job = new Job(id, message.Name, message.Description, message.Status);
+            var Job = new Job(id, message.Name, message.Description, message.Status, message.EpochsRun, message.Owner);
 
             _JobRepository.Add(Job);
 

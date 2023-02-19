@@ -8,12 +8,13 @@ namespace MLServer.Domain.Commands.Job
 {
     public class UpdateJobCommand : JobCommand, IRequest<bool>
     {
-        public UpdateJobCommand(Guid id, string name, string description, JobStatus status)
+        public UpdateJobCommand(Guid id, string name, string description, JobStatus status, string owner)
         {
             Id = id;
             Name = name;
             Description = description;
             Status = status;
+            Owner = owner;
         }
 
         public override bool IsValid()

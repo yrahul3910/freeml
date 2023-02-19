@@ -9,6 +9,8 @@ namespace MLServer.Domain.Validations.Job
             ValidateName();
             ValidateDescription();
             ValidateJobStatus();
+            ValidateEpochsRun();
+            ValidateOwner();
         }
     }
 }

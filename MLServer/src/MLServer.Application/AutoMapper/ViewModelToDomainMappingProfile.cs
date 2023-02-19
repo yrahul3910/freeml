@@ -12,10 +12,10 @@ namespace MLServer.Application.AutoMapper
         public ViewModelToDomainMappingProfile()
         {
             CreateMap<RegisterNewJobViewModel, RegisterNewJobCommand>()
-                .ConstructUsing(src => new RegisterNewJobCommand(src.Name, src.Description, (JobStatus)src.Status));
+                .ConstructUsing(src => new RegisterNewJobCommand(src.Name, src.Description, (JobStatus)src.Status, src.EpochsRun, src.Owner));
 
             CreateMap<UpdateJobViewModel, UpdateJobCommand>()
-                .ConstructUsing(src => new UpdateJobCommand(src.Id, src.Name, src.Description, (JobStatus)src.Status));
+                .ConstructUsing(src => new UpdateJobCommand(src.Id, src.Name, src.Description, (JobStatus)src.Status, src.Owner));
 
             CreateMap<RegisterNewUserAccountViewModel, RegisterNewUserAccountCommand>()
                 .ConstructUsing(src => new RegisterNewUserAccountCommand(src.Name));
